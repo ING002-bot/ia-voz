@@ -67,3 +67,73 @@ body {
 @media (max-width: 760px) {
   .io { grid-template-columns: 1fr; }
 }
+
+/* Floating mic button */
+.fab {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: none;
+  background: #2563eb;
+  color: #fff;
+  font-size: 24px;
+  box-shadow: 0 10px 20px rgba(0,0,0,0.35);
+  cursor: pointer;
+}
+.fab:hover { background: #1d4ed8; }
+
+/* Admin link */
+.admin-link { margin-left: 12px; text-decoration: none; }
+
+/* Auth */
+.auth-container { max-width: 420px; margin: 40px auto; background: #111827; border: 1px solid #1f2937; border-radius: 12px; padding: 20px; }
+.auth-form { display: grid; gap: 10px; }
+.auth-form input { padding: 10px; border-radius: 8px; border: 1px solid #253047; background: #0b1220; color: #e2e8f0; }
+.alert { background: #7f1d1d; color: #fecaca; padding: 8px 10px; border-radius: 8px; margin-bottom: 10px; }
+
+/* Admin Panel */
+.admin-layout { display: grid; grid-template-columns: 280px 1fr; gap: 18px; }
+.sidebar { background: #12233d; border: 1px solid #2a3b55; border-radius: 14px; padding: 18px; box-shadow: 0 10px 30px rgba(0,0,0,0.25); }
+.sidebar h2 { margin-top: 0; }
+.content { background: #0b1220; border: 1px solid #1f2937; border-radius: 14px; padding: 18px; box-shadow: 0 10px 30px rgba(0,0,0,0.25); }
+.cards { display: grid; grid-template-columns: 1fr; gap: 12px; margin-bottom: 16px; }
+.card { background: #203a5a; border: 1px solid #355279; border-radius: 14px; padding: 14px; color: #e5e7eb; }
+.stat-card .stat-label { color: #cbd5e1; font-size: 0.95rem; }
+.stat-card .stat-value { font-size: 1.6rem; font-weight: 700; margin-top: 2px; }
+.stat-card .bi { font-size: 1.2rem; margin-right: 6px; opacity: 0.9; }
+.progress { height: 8px; background: #13263f; border-radius: 999px; }
+.progress-bar { border-radius: 999px; }
+.progress-chip { display: inline-block; margin-top: 6px; padding: 4px 8px; border-radius: 999px; font-weight: 700; font-size: 0.9rem; }
+.progress-chip.warning { background: #f59e0b; color: #111827; }
+.progress-chip.danger { background: #ef4444; color: #111827; }
+.table { width: 100%; border-collapse: collapse; }
+.table th, .table td { border-bottom: 1px solid #253047; padding: 8px; text-align: left; }
+.table th { color: #cbd5e1; font-weight: 600; }
+.row-actions { display: flex; gap: 6px; }
+.grid { display: grid; gap: 10px; }
+.grid-2 { grid-template-columns: 1fr 1fr; }
+.grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+.grid input, .grid select, .grid textarea { padding: 8px; border-radius: 8px; border: 1px solid #253047; background: #0b1220; color: #e2e8f0; }
+.topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.micro-admin { position: fixed; right: 20px; top: 20px; z-index: 1000; }
+
+/* Catalog */
+.catalog { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; }
+.card-product { background: #0b1220; border: 1px solid #1f2937; border-radius: 14px; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.2); display: flex; flex-direction: column; }
+.card-product .image { background: linear-gradient(135deg,#1f3b5c,#213b60); height: 120px; }
+.card-product .body { padding: 12px; display: grid; gap: 6px; }
+.card-product .title { margin: 0; font-size: 1.05rem; color: #e2e8f0; }
+.card-product .desc { margin: 0; color: #94a3b8; font-size: 0.95rem; min-height: 42px; }
+.card-product .meta { display: flex; justify-content: space-between; align-items: center; }
+.card-product .price { color: #a5b4fc; font-weight: 600; }
+.card-product .stock.ok { color: #10b981; }
+.card-product .stock.zero { color: #ef4444; }
+
+/* Voice toast */
+.voice-toast { position: fixed; right: 20px; bottom: 90px; width: 300px; background: #0f172a; border: 1px solid #243042; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.35); padding: 12px; color: #e2e8f0; }
+.voice-toast .vt-title { font-weight: 700; margin-bottom: 4px; color: #cbd5e1; }
+.voice-toast .vt-question { color: #a5b4fc; margin-bottom: 4px; }
+.voice-toast .vt-answer { color: #e5e7eb; }

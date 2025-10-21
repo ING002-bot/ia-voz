@@ -1,6 +1,7 @@
 // Web Speech API (STT + TTS) and backend integration
 (function () {
   const btnToggle = document.getElementById('btnToggle');
+  const clientMicFab = document.getElementById('clientMicFab');
   const statusEl = document.getElementById('status');
   const transcriptEl = document.getElementById('transcript');
   const responseEl = document.getElementById('response');
@@ -29,6 +30,23 @@
     responseEl.textContent = text;
   }
 
+  function setTyping() {
+    responseEl.textContent = 'IA: escribiendo…';
+  }
+
+  function isGreeting(s) {
+    return /(\bhola\b|\bbuenas\b|buenos dias|buenos días|buenas tardes|buenas noches|\bhey\b|que tal|qué tal)/i.test(s);
+  }
+
+  function localGreeting() {
+    const opts = [
+      '¡Hola! 😊 ¿En qué puedo ayudarte hoy?',
+      '¡Qué gusto escucharte! 🙌 Dime, ¿qué necesitas?',
+      '¡Hola, bienvenido a la farmacia! 🏪 Estoy listo para ayudarte.'
+    ];
+    return opts[Math.floor(Math.random() * opts.length)];
+  }
+
   function speak(text) {
     if (!synth) return;
     const utter = new SpeechSynthesisUtterance(text);
@@ -43,13 +61,20 @@
   async function sendQuestion(question) {
     try {
       setStatus('Consultando...');
+      if (isGreeting(question)) {
+        const msg = localGreeting();
+        setResponse(msg);
+        speak(msg);
+      } else {
+        setTyping();
+      }
       const res = await fetch('api.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ question })
       });
       const data = await res.json();
-      const answer = data && data.text ? data.text : 'No pude obtener una respuesta.';
+      const answer = data && data.text ? data.text : 'Mmm... 🤔 no estoy seguro. Puedo ayudarte con disponibilidad y precios. Por ejemplo: "¿Tienen paracetamol?" o "¿Cuánto cuesta el ibuprofeno?"';
       setResponse(answer);
       speak(answer);
       setStatus('Listo');
@@ -112,6 +137,16 @@
     }
     toggleRecording();
   });
+
+  if (clientMicFab) {
+    clientMicFab.addEventListener('click', () => {
+      if (!supportsSpeech()) {
+        setResponse('Tu navegador no soporta Web Speech API. Usa la entrada manual.');
+        return;
+      }
+      toggleRecording();
+    });
+  }
 
   btnSend.addEventListener('click', () => {
     const q = (txtInput.value || '').trim();
