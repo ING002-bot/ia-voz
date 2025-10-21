@@ -1,8 +1,19 @@
--- Crear base de datos para la app (ajustada a db.php: omarcitoia)
+-- ============================================
+-- SCHEMA COMPLETO - FARMACIA VIRTUAL
+-- Base de datos completa con productos y categorías
+-- ============================================
+
+-- Crear base de datos
 CREATE DATABASE IF NOT EXISTS omarcitoia CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE omarcitoia;
 
-CREATE TABLE IF NOT EXISTS medicamentos (
+-- ============================================
+-- TABLA: medicamentos
+-- ============================================
+DROP TABLE IF EXISTS ventas;
+DROP TABLE IF EXISTS medicamentos;
+
+CREATE TABLE medicamentos (
   id INT AUTO_INCREMENT PRIMARY KEY,
   nombre VARCHAR(255) NOT NULL,
   descripcion TEXT,
@@ -10,17 +21,13 @@ CREATE TABLE IF NOT EXISTS medicamentos (
   stock INT NOT NULL DEFAULT 0,
   fecha_vencimiento DATE NULL,
   imagen VARCHAR(500) NULL,
-  categoria VARCHAR(100) NULL DEFAULT 'General'
+  categoria VARCHAR(100) NULL DEFAULT 'General',
+  INDEX idx_categoria (categoria)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- Add imagen and categoria columns if they don't exist (for existing databases)
-ALTER TABLE medicamentos ADD COLUMN IF NOT EXISTS imagen VARCHAR(500) NULL;
-ALTER TABLE medicamentos ADD COLUMN IF NOT EXISTS categoria VARCHAR(100) NULL DEFAULT 'General';
-
--- Deshabilitar restricciones de claves foráneas temporalmente (si es necesario limpiar datos)
--- SET FOREIGN_KEY_CHECKS = 0;
--- TRUNCATE TABLE medicamentos;
--- SET FOREIGN_KEY_CHECKS = 1;
+-- ============================================
+-- INSERTAR PRODUCTOS POR CATEGORÍA
+-- ============================================
 
 INSERT INTO medicamentos (nombre, descripcion, precio, stock, fecha_vencimiento, imagen, categoria) VALUES
 -- ANALGÉSICOS Y ANTIINFLAMATORIOS
@@ -34,7 +41,7 @@ INSERT INTO medicamentos (nombre, descripcion, precio, stock, fecha_vencimiento,
 ('Azitromicina 500mg', 'Antibiótico macrólido. Infecciones respiratorias y de piel.', 11.20, 14, DATE_ADD(CURDATE(), INTERVAL 70 DAY), 'https://images.unsplash.com/photo-1587854692152-cbe660dbde88?w=500&h=400&fit=crop&q=80&sat=-10', 'Antibióticos'),
 ('Ciprofloxacino 500mg', 'Antibiótico de amplio espectro. Infecciones urinarias y gastrointestinales.', 9.80, 16, DATE_ADD(CURDATE(), INTERVAL 85 DAY), 'https://images.unsplash.com/photo-1471864190281-a93a3070b6de?w=500&h=400&fit=crop&q=80&sat=-10', 'Antibióticos'),
 
--- ANTIHISTAMÍNICOS Y ALERGIAS
+-- ANTIHISTAMÍNICOS
 ('Loratadina 10mg', 'Antihistamínico. Alivia síntomas de alergia.', 4.20, 15, DATE_ADD(CURDATE(), INTERVAL 200 DAY), 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=500&h=400&fit=crop&q=80&hue=20', 'Antihistamínicos'),
 ('Cetirizina 10mg', 'Antihistamínico de segunda generación. Alivia alergias sin somnolencia.', 4.50, 22, DATE_ADD(CURDATE(), INTERVAL 220 DAY), 'https://images.unsplash.com/photo-1550572017-4a6a5e3c8c3f?w=500&h=400&fit=crop&q=80&hue=20', 'Antihistamínicos'),
 ('Desloratadina 5mg', 'Antihistamínico avanzado. Control efectivo de rinitis alérgica.', 5.80, 18, DATE_ADD(CURDATE(), INTERVAL 210 DAY), 'https://images.unsplash.com/photo-1587854692152-cbe660dbde88?w=500&h=400&fit=crop&q=80&hue=20', 'Antihistamínicos'),
@@ -54,7 +61,7 @@ INSERT INTO medicamentos (nombre, descripcion, precio, stock, fecha_vencimiento,
 ('Metformina 850mg', 'Antidiabético oral. Control de glucosa en diabetes tipo 2.', 7.20, 18, DATE_ADD(CURDATE(), INTERVAL 90 DAY), 'https://images.unsplash.com/photo-1550572017-4a6a5e3c8c3f?w=500&h=400&fit=crop&q=80&hue=280', 'Diabetes'),
 ('Glibenclamida 5mg', 'Hipoglucemiante oral. Estimula la producción de insulina.', 5.90, 15, DATE_ADD(CURDATE(), INTERVAL 95 DAY), 'https://images.unsplash.com/photo-1587854692152-cbe660dbde88?w=500&h=400&fit=crop&q=80&hue=280', 'Diabetes'),
 
--- VITAMINAS Y SUPLEMENTOS
+-- VITAMINAS
 ('Vitamina C 1000mg', 'Suplemento vitamínico. Fortalece el sistema inmunológico.', 6.80, 35, DATE_ADD(CURDATE(), INTERVAL 300 DAY), 'https://images.unsplash.com/photo-1631549916768-4119b2e5f926?w=500&h=400&fit=crop&q=80&hue=60', 'Vitaminas'),
 ('Complejo B', 'Suplemento de vitaminas del complejo B. Energía y salud nerviosa.', 8.90, 32, DATE_ADD(CURDATE(), INTERVAL 350 DAY), 'https://images.unsplash.com/photo-1471864190281-a93a3070b6de?w=500&h=400&fit=crop&q=80&hue=60', 'Vitaminas'),
 ('Vitamina D3 2000 UI', 'Suplemento esencial. Fortalece huesos y sistema inmune.', 12.50, 28, DATE_ADD(CURDATE(), INTERVAL 380 DAY), 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=500&h=400&fit=crop&q=80&hue=60', 'Vitaminas'),
@@ -63,11 +70,15 @@ INSERT INTO medicamentos (nombre, descripcion, precio, stock, fecha_vencimiento,
 ('Salbutamol Inhalador', 'Broncodilatador. Alivia síntomas de asma y broncoespasmo.', 15.80, 11, DATE_ADD(CURDATE(), INTERVAL 240 DAY), 'https://images.unsplash.com/photo-1550572017-4a6a5e3c8c3f?w=500&h=400&fit=crop&q=80&hue=180', 'Respiratorios'),
 ('Ambroxol 30mg', 'Mucolítico. Facilita la expectoración en enfermedades respiratorias.', 4.90, 24, DATE_ADD(CURDATE(), INTERVAL 170 DAY), 'https://images.unsplash.com/photo-1587854692152-cbe660dbde88?w=500&h=400&fit=crop&q=80&hue=180', 'Respiratorios'),
 
--- OTROS
+-- NEUROLÓGICOS
 ('Clonazepam 2mg', 'Ansiolítico y anticonvulsivo. Tratamiento de ansiedad y epilepsia.', 12.50, 10, DATE_ADD(CURDATE(), INTERVAL 80 DAY), 'https://images.unsplash.com/photo-1631549916768-4119b2e5f926?w=500&h=400&fit=crop&q=80', 'Neurológicos'),
+
+-- CORTICOIDES
 ('Dexametasona 4mg', 'Corticoide potente. Antiinflamatorio e inmunosupresor.', 7.60, 17, DATE_ADD(CURDATE(), INTERVAL 95 DAY), 'https://images.unsplash.com/photo-1471864190281-a93a3070b6de?w=500&h=400&fit=crop&q=80', 'Corticoides');
 
--- Tabla de administradores (login.php también la crea si no existe y provisiona un admin por defecto)
+-- ============================================
+-- TABLA: usuarios_admin
+-- ============================================
 CREATE TABLE IF NOT EXISTS usuarios_admin (
   id INT AUTO_INCREMENT PRIMARY KEY,
   username VARCHAR(100) UNIQUE NOT NULL,
@@ -76,7 +87,9 @@ CREATE TABLE IF NOT EXISTS usuarios_admin (
   role VARCHAR(32) NOT NULL DEFAULT 'admin'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- Historial de consultas (cliente/admin)
+-- ============================================
+-- TABLA: consultas_historial
+-- ============================================
 CREATE TABLE IF NOT EXISTS consultas_historial (
   id INT AUTO_INCREMENT PRIMARY KEY,
   user_type ENUM('client','admin') NOT NULL,
@@ -85,7 +98,9 @@ CREATE TABLE IF NOT EXISTS consultas_historial (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- Ventas simples
+-- ============================================
+-- TABLA: ventas
+-- ============================================
 CREATE TABLE IF NOT EXISTS ventas (
   id INT AUTO_INCREMENT PRIMARY KEY,
   medicamento_id INT NOT NULL,
@@ -95,7 +110,9 @@ CREATE TABLE IF NOT EXISTS ventas (
   CONSTRAINT fk_venta_medicamento FOREIGN KEY (medicamento_id) REFERENCES medicamentos(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- Restablecimiento de contraseña
+-- ============================================
+-- TABLA: password_resets
+-- ============================================
 CREATE TABLE IF NOT EXISTS password_resets (
   id INT AUTO_INCREMENT PRIMARY KEY,
   user_id INT NOT NULL,
@@ -105,4 +122,17 @@ CREATE TABLE IF NOT EXISTS password_resets (
   INDEX (token)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- ============================================
+-- RESUMEN
+-- ============================================
+SELECT 
+  'Base de datos creada exitosamente!' as Estado,
+  COUNT(*) as Total_Productos 
+FROM medicamentos;
 
+SELECT 
+  categoria as Categoria,
+  COUNT(*) as Cantidad_Productos
+FROM medicamentos
+GROUP BY categoria
+ORDER BY categoria;

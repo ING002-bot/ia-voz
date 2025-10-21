@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Micrófono Simple</title>
+  <style>
+    body {
+      font-family: system-ui;
+      background: #0f172a;
+      color: #e2e8f0;
+      padding: 40px;
+      text-align: center;
+    }
+    h1 { color: #60a5fa; }
+    .btn {
+      background: #2563eb;
+      color: white;
+      border: none;
+      padding: 20px 40px;
+      border-radius: 12px;
+      cursor: pointer;
+      font-size: 24px;
+      margin: 20px;
+    }
+    .btn:hover { background: #1d4ed8; }
+    .btn.recording {
+      background: #ef4444;
+      animation: pulse 1s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+    }
+    #result {
+      margin-top: 30px;
+      padding: 20px;
+      background: #111827;
+      border-radius: 12px;
+      min-height: 100px;
+      font-size: 18px;
+    }
+    .success { color: #10b981; }
+    .error { color: #ef4444; }
+  </style>
+</head>
+<body>
+  <h1>🎤 Test de Micrófono</h1>
+  <p>Prueba simple para verificar que el micrófono funcione</p>
+  <p style="color: #f59e0b;">⚠️ Requiere conexión a internet</p>
+  
+  <button id="btn" class="btn">🎤 Haz clic y habla</button>
+  
+  <div id="result">Esperando...</div>
+
+  <script>
+    const btn = document.getElementById('btn');
+    const result = document.getElementById('result');
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    
+    if (!SpeechRecognition) {
+      result.innerHTML = '<span class="error">❌ Tu navegador no soporta reconocimiento de voz.<br>Usa Chrome, Edge o Safari.</span>';
+      btn.disabled = true;
+      btn.style.opacity = '0.5';
+    } else {
+      const recognition = new SpeechRecognition();
+      recognition.lang = 'es-ES';
+      recognition.interimResults = false;
+      
+      let isRecording = false;
+      
+      recognition.onstart = () => {
+        isRecording = true;
+        btn.classList.add('recording');
+        btn.textContent = '⏹️ Habla ahora...';
+        result.innerHTML = '<span class="success">✅ Escuchando... Habla ahora!</span>';
+        console.log('Escuchando...');
+      };
+      
+      recognition.onend = () => {
+        isRecording = false;
+        btn.classList.remove('recording');
+        btn.textContent = '🎤 Haz clic y habla';
+        console.log('Detenido');
+      };
+      
+      recognition.onerror = (e) => {
+        isRecording = false;
+        btn.classList.remove('recording');
+        btn.textContent = '🎤 Haz clic y habla';
+        
+        let msg = '';
+        switch(e.error) {
+          case 'not-allowed':
+            msg = '❌ Permisos denegados.<br><br>1. Haz clic en el icono de candado en la barra de direcciones<br>2. Permite el acceso al micrófono<br>3. Recarga la página';
+            break;
+          case 'no-speech':
+            msg = '⚠️ No escuché nada. Intenta de nuevo hablando más cerca del micrófono.';
+            break;
+          case 'audio-capture':
+            msg = '❌ No se detectó micrófono. Verifica que esté conectado.';
+            break;
+          case 'network':
+            msg = '❌ Error de red.<br><br>El reconocimiento de voz de Chrome requiere <strong>conexión a internet</strong> para funcionar.<br><br>Verifica que estés conectado a internet e intenta de nuevo.';
+            break;
+          default:
+            msg = `❌ Error: ${e.error}`;
+        }
+        
+        result.innerHTML = `<span class="error">${msg}</span>`;
+        console.error('Error:', e.error);
+      };
+      
+      recognition.onresult = (e) => {
+        const text = e.results[0][0].transcript;
+        const confidence = (e.results[0][0].confidence * 100).toFixed(1);
+        
+        result.innerHTML = `
+          <span class="success">✅ ¡Funcionó!</span><br><br>
+          <strong>Dijiste:</strong> "${text}"<br>
+          <strong>Confianza:</strong> ${confidence}%
+        `;
+        
+        console.log('Reconocido:', text);
+      };
+      
+      btn.addEventListener('click', () => {
+        if (isRecording) {
+          recognition.stop();
+        } else {
+          try {
+            recognition.start();
+          } catch (e) {
+            console.error('Error al iniciar:', e);
+            result.innerHTML = '<span class="error">❌ Error al iniciar. Recarga la página.</span>';
+          }
+        }
+      });
+    }
+  </script>
+</body>
+</html>

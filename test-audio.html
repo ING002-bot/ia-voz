@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Audio - Chatbot</title>
+  <style>
+    body {
+      font-family: system-ui;
+      background: #0f172a;
+      color: #e2e8f0;
+      padding: 40px;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    h1 { color: #60a5fa; }
+    .btn {
+      background: #2563eb;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+      margin: 10px 5px;
+    }
+    .btn:hover { background: #1d4ed8; }
+    .info {
+      background: #111827;
+      border: 1px solid #1f2937;
+      border-radius: 12px;
+      padding: 16px;
+      margin: 20px 0;
+    }
+    .success { color: #10b981; }
+    .error { color: #ef4444; }
+    #log {
+      background: #0b1220;
+      border: 1px solid #1f2937;
+      border-radius: 8px;
+      padding: 12px;
+      margin-top: 20px;
+      max-height: 300px;
+      overflow-y: auto;
+      font-family: monospace;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <h1>🔊 Test de Audio - Chatbot</h1>
+  
+  <div class="info">
+    <h3>Estado del Sistema:</h3>
+    <p id="speechStatus">Verificando...</p>
+    <p id="voicesStatus">Verificando voces...</p>
+  </div>
+
+  <div>
+    <button class="btn" onclick="testSpeak()">🔊 Probar Audio</button>
+    <button class="btn" onclick="testRecognition()">🎤 Probar Reconocimiento</button>
+    <button class="btn" onclick="listVoices()">📋 Listar Voces</button>
+    <button class="btn" onclick="clearLog()">🗑️ Limpiar Log</button>
+  </div>
+
+  <div id="log"></div>
+
+  <script>
+    const synth = window.speechSynthesis;
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const log = document.getElementById('log');
+    let recognition = null;
+
+    function addLog(msg, type = 'info') {
+      const time = new Date().toLocaleTimeString();
+      const color = type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#60a5fa';
+      log.innerHTML += `<div style="color: ${color}; margin: 5px 0;">[${time}] ${msg}</div>`;
+      log.scrollTop = log.scrollHeight;
+    }
+
+    function clearLog() {
+      log.innerHTML = '';
+    }
+
+    // Verificar soporte
+    if(synth) {
+      document.getElementById('speechStatus').innerHTML = '<span class="success">✅ Speech Synthesis: Soportado</span>';
+      addLog('✅ Speech Synthesis disponible', 'success');
+    } else {
+      document.getElementById('speechStatus').innerHTML = '<span class="error">❌ Speech Synthesis: No soportado</span>';
+      addLog('❌ Speech Synthesis NO disponible', 'error');
+    }
+
+    if(SpeechRecognition) {
+      document.getElementById('voicesStatus').innerHTML = '<span class="success">✅ Speech Recognition: Soportado</span>';
+      addLog('✅ Speech Recognition disponible', 'success');
+      
+      recognition = new SpeechRecognition();
+      recognition.lang = 'es-ES';
+      recognition.interimResults = false;
+      
+      recognition.onresult = (e) => {
+        const text = e.results[0][0].transcript;
+        addLog(`📝 Reconocido: "${text}"`, 'success');
+      };
+      
+      recognition.onerror = (e) => {
+        addLog(`❌ Error: ${e.error}`, 'error');
+      };
+      
+      recognition.onend = () => {
+        addLog('🎤 Reconocimiento detenido', 'info');
+      };
+    } else {
+      document.getElementById('voicesStatus').innerHTML = '<span class="error">❌ Speech Recognition: No soportado</span>';
+      addLog('❌ Speech Recognition NO disponible', 'error');
+    }
+
+    // Cargar voces
+    function loadVoices() {
+      const voices = synth.getVoices();
+      addLog(`📋 ${voices.length} voces disponibles`, 'info');
+      return voices;
+    }
+
+    if(synth) {
+      if(synth.getVoices().length === 0) {
+        synth.addEventListener('voiceschanged', () => {
+          loadVoices();
+        });
+      } else {
+        loadVoices();
+      }
+    }
+
+    function testSpeak() {
+      if(!synth) {
+        addLog('❌ Speech Synthesis no disponible', 'error');
+        return;
+      }
+
+      addLog('🔊 Iniciando prueba de audio...', 'info');
+      
+      synth.cancel();
+      const utterance = new SpeechSynthesisUtterance('Hola, soy el asistente de la farmacia virtual. El audio está funcionando correctamente.');
+      utterance.lang = 'es-ES';
+      utterance.rate = 1.0;
+      utterance.pitch = 1.0;
+      utterance.volume = 1.0;
+
+      const voices = synth.getVoices();
+      const spanishVoice = voices.find(v => /es[-_]ES/i.test(v.lang)) || voices.find(v => /es/i.test(v.lang));
+      
+      if(spanishVoice) {
+        utterance.voice = spanishVoice;
+        addLog(`🗣️ Usando voz: ${spanishVoice.name}`, 'info');
+      } else {
+        addLog('⚠️ No se encontró voz en español, usando voz por defecto', 'info');
+      }
+
+      utterance.onstart = () => {
+        addLog('▶️ Audio iniciado', 'success');
+      };
+
+      utterance.onend = () => {
+        addLog('✅ Audio completado', 'success');
+      };
+
+      utterance.onerror = (e) => {
+        addLog(`❌ Error en audio: ${e.error}`, 'error');
+      };
+
+      synth.speak(utterance);
+    }
+
+    function testRecognition() {
+      if(!recognition) {
+        addLog('❌ Speech Recognition no disponible', 'error');
+        return;
+      }
+
+      addLog('🎤 Iniciando reconocimiento de voz... Habla ahora!', 'info');
+      
+      try {
+        recognition.start();
+      } catch(e) {
+        addLog(`❌ Error al iniciar: ${e.message}`, 'error');
+      }
+    }
+
+    function listVoices() {
+      if(!synth) {
+        addLog('❌ Speech Synthesis no disponible', 'error');
+        return;
+      }
+
+      const voices = synth.getVoices();
+      addLog(`📋 Listando ${voices.length} voces disponibles:`, 'info');
+      
+      voices.forEach((voice, i) => {
+        const isSpanish = /es/i.test(voice.lang);
+        const marker = isSpanish ? '🇪🇸' : '🌐';
+        addLog(`${marker} ${i + 1}. ${voice.name} (${voice.lang})`, isSpanish ? 'success' : 'info');
+      });
+    }
+
+    // Auto-test al cargar
+    setTimeout(() => {
+      addLog('🚀 Sistema listo para pruebas', 'success');
+    }, 1000);
+  </script>
+</body>
+</html>
