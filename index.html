@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Asistente de Voz - Farmacia</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <h1>Asistente de Voz - Farmacia</h1>
+    </header>
+
+    <main class="main">
+      <section class="panel">
+        <div class="mic-controls">
+          <button id="btnToggle" class="btn primary">🎤 Hablar</button>
+          <span id="status" class="status">Listo</span>
+        </div>
+
+        <div class="io">
+          <div class="box">
+            <h2>Lo que dijiste</h2>
+            <div id="transcript" class="content" aria-live="polite"></div>
+          </div>
+          <div class="box">
+            <h2>Respuesta</h2>
+            <div id="response" class="content" aria-live="polite"></div>
+          </div>
+        </div>
+
+        <div class="manual">
+          <input type="text" id="txtInput" placeholder="O escribe tu pregunta (ej. ¿Tienen paracetamol?)" />
+          <button id="btnSend" class="btn">Enviar</button>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <small>Funciona con Web Speech API y PHP + MySQL</small>
+    </footer>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
