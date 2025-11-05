@@ -6,6 +6,16 @@ require_once __DIR__ . '/db.php';
 $error = '';
 $db = get_db();
 
+// Ensure table exists and auto-provision default admin if empty
+$db->query("CREATE TABLE IF NOT EXISTS usuarios_admin (id INT AUTO_INCREMENT PRIMARY KEY, username VARCHAR(100) UNIQUE NOT NULL, password VARCHAR(255) NOT NULL) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+$chk = $db->query("SELECT COUNT(*) AS c FROM usuarios_admin");
+if ($chk && ($row = $chk->fetch_assoc()) && (int)$row['c'] === 0) {
+    $u = 'admin';
+    $p = password_hash('admin123', PASSWORD_DEFAULT);
+    $stmt = $db->prepare('INSERT INTO usuarios_admin (username, password) VALUES (?, ?)');
+    if ($stmt) { $stmt->bind_param('ss', $u, $p); $stmt->execute(); $stmt->close(); }
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $username = trim((string)($_POST['username'] ?? ''));
     $password = (string)($_POST['password'] ?? '');
@@ -13,7 +23,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     if ($username !== '' && $password !== '') {
         // Primero verificar si es admin
-        $stmt = $db->prepare('SELECT id, username, password, role FROM usuarios_admin WHERE username = ? LIMIT 1');
+        $stmt = $db->prepare('SELECT id, username, password FROM usuarios_admin WHERE username = ? LIMIT 1');
         if ($stmt) {
             $stmt->bind_param('s', $username);
             if ($stmt->execute()) {
