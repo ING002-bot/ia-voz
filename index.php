@@ -36,29 +36,38 @@ if ($res) {
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Catálogo - Farmacia</title>
+  <title>Catálogo - Farmacia Omarcitoia</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <header class="container py-4 d-flex justify-content-between align-items-center" style="border-bottom: 1px solid #1f2937;">
-    <div>
-      <h1 class="m-0" style="font-size: 1.8rem; font-weight: 700; color: #f1f5f9;">🏥 Farmacia Virtual</h1>
-      <p class="m-0 mt-1" style="font-size: 0.9rem; color: #94a3b8;">Tu salud, nuestra prioridad</p>
+  <header class="modern-header">
+    <div class="container">
+      <div class="header-content">
+        <div class="header-brand">
+          <h1>💊 Farmacia Omarcitoia</h1>
+          <p>Tu salud, nuestra prioridad</p>
+        </div>
+        <div class="header-actions">
+          <a href="register.php" class="btn btn-outline">Registrarse</a>
+          <a href="login_unified.php" class="btn btn-primary">Iniciar Sesión</a>
+        </div>
+      </div>
     </div>
-    <a href="login.php" class="btn btn-primary" style="padding: 10px 20px; border-radius: 10px;">Iniciar Sesión</a>
   </header>
 
-  <main class="container pb-5">
-    <div class="d-flex justify-content-between align-items-center mb-4 mt-4">
-      <div>
-        <h2 class="m-0" style="font-size: 1.6rem; font-weight: 700; color: #f1f5f9;">Catálogo de Productos</h2>
-        <p class="m-0 mt-1" style="font-size: 0.95rem; color: #94a3b8;">Encuentra los medicamentos que necesitas</p>
+  <main class="modern-main">
+    <div class="container">
+      <div class="catalog-header">
+        <div>
+          <h2 class="catalog-title">Catálogo de Productos</h2>
+          <p class="catalog-subtitle">Encuentra los medicamentos que necesitas</p>
+        </div>
+        <div class="catalog-count">
+          <?= count($rows) ?> productos
+        </div>
       </div>
-      <div style="color: #60a5fa; font-weight: 600;">
-        <?= count($rows) ?> productos disponibles
-      </div>
-    </div>
 
     <?php foreach ($categorias as $categoria => $productos): ?>
       <section class="category-section mb-5">
@@ -69,14 +78,20 @@ if ($res) {
         
         <div class="catalog">
           <?php foreach ($productos as $p): ?>
-            <article class="card-product">
-              <div class="image" aria-hidden="true" style="<?php if(!empty($p['imagen'])) { echo 'background-image:url(' . htmlspecialchars($p['imagen'], ENT_QUOTES, 'UTF-8') . '); background-size:cover; background-position:center;'; } ?>"></div>
+            <article class="card-product <?= (int)$p['stock'] === 0 ? 'agotado' : '' ?>">
+              <div class="image" aria-hidden="true" style="<?php if(!empty($p['imagen'])) { echo 'background-image:url(' . htmlspecialchars($p['imagen'], ENT_QUOTES, 'UTF-8') . '); background-size:cover; background-position:center;'; } ?>">
+                <?php if ((int)$p['stock'] === 0): ?>
+                  <div class="badge-agotado">No disponible</div>
+                <?php endif; ?>
+              </div>
               <div class="body">
-                <h3 class="title"><?= htmlspecialchars($p['nombre'], ENT_QUOTES, 'UTF-8') ?></h3>
+                <h3 class="title <?= (int)$p['stock'] === 0 ? 'title-agotado' : '' ?>"><?= htmlspecialchars($p['nombre'], ENT_QUOTES, 'UTF-8') ?></h3>
                 <p class="desc"><?= htmlspecialchars((string)$p['descripcion'], ENT_QUOTES, 'UTF-8') ?></p>
                 <div class="meta">
-                  <span class="price">S/ <?= number_format((float)$p['precio'], 2) ?></span>
-                  <span class="stock <?= (int)$p['stock'] > 0 ? 'ok' : 'zero' ?>">Stock: <?= (int)$p['stock'] ?></span>
+                  <span class="price <?= (int)$p['stock'] === 0 ? 'price-agotado' : '' ?>">S/ <?= number_format((float)$p['precio'], 2) ?></span>
+                  <span class="disponibilidad <?= (int)$p['stock'] > 0 ? 'disponible' : 'no-disponible' ?>">
+                    <?= (int)$p['stock'] > 0 ? '✓ Disponible' : '✕ Agotado' ?>
+                  </span>
                 </div>
               </div>
             </article>
@@ -84,7 +99,14 @@ if ($res) {
         </div>
       </section>
     <?php endforeach; ?>
+    </div>
   </main>
+  
+  <footer class="modern-footer">
+    <div class="container">
+      <p>© 2025 Farmacia Omarcitoia - Tu salud, nuestra prioridad 💊</p>
+    </div>
+  </footer>
 
   <!-- Asistente de voz cliente -->
   <button id="catalogMicFab" class="fab" title="Hablar con el asistente">🎤</button>

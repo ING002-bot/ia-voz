@@ -123,6 +123,52 @@ CREATE TABLE IF NOT EXISTS password_resets (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- ============================================
+-- TABLA: usuarios_clientes (NEW)
+-- ============================================
+CREATE TABLE IF NOT EXISTS usuarios_clientes (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  username VARCHAR(100) UNIQUE NOT NULL,
+  password VARCHAR(255) NOT NULL,
+  nombre_completo VARCHAR(200) NOT NULL,
+  direccion TEXT NULL,
+  telefono VARCHAR(50) NULL,
+  email VARCHAR(190) NULL,
+  puntos INT NOT NULL DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_username (username)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ============================================
+-- TABLA: compras (NEW)
+-- ============================================
+CREATE TABLE IF NOT EXISTS compras (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  usuario_id INT NOT NULL,
+  medicamento_id INT NOT NULL,
+  cantidad INT NOT NULL,
+  precio_unitario DECIMAL(10,2) NOT NULL,
+  subtotal DECIMAL(10,2) NOT NULL,
+  fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_compra_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios_clientes(id) ON DELETE CASCADE,
+  CONSTRAINT fk_compra_medicamento FOREIGN KEY (medicamento_id) REFERENCES medicamentos(id) ON DELETE CASCADE,
+  INDEX idx_usuario_fecha (usuario_id, fecha)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ============================================
+-- TABLA: boletas (NEW)
+-- ============================================
+CREATE TABLE IF NOT EXISTS boletas (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  usuario_id INT NOT NULL,
+  numero_boleta VARCHAR(50) UNIQUE NOT NULL,
+  total DECIMAL(10,2) NOT NULL,
+  fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  detalles JSON NULL,
+  CONSTRAINT fk_boleta_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios_clientes(id) ON DELETE CASCADE,
+  INDEX idx_numero_boleta (numero_boleta)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ============================================
 -- RESUMEN
 -- ============================================
 SELECT 

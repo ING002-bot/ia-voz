@@ -106,20 +106,21 @@ if ($res) { $rows = $res->fetch_all(MYSQLI_ASSOC); }
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Panel Admin - Farmacia</title>
+  <title>Panel Admin - Farmacia Omarcitoia</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <div class="app container py-3">
-    <div class="topbar">
-      <div>
-        <h1>Panel de Administración</h1>
-        <small>Hola, <?= htmlspecialchars($_SESSION['admin_username'] ?? 'admin', ENT_QUOTES, 'UTF-8') ?></small>
+  <div class="admin-container">
+    <div class="admin-topbar">
+      <div class="topbar-left">
+        <h1>🛡️ Panel de Administración</h1>
+        <small>Hola, <strong><?= htmlspecialchars($_SESSION['admin_username'] ?? 'admin', ENT_QUOTES, 'UTF-8') ?></strong></small>
       </div>
-      <div>
-        <a class="btn" href="index.html">Inicio</a>
-        <a class="btn" href="logout.php">Salir</a>
+      <div class="topbar-actions">
+        <a class="btn btn-outline" href="index.html">Inicio</a>
+        <a class="btn btn-danger" href="logout.php">Salir</a>
       </div>
     </div>
 
@@ -128,50 +129,56 @@ if ($res) { $rows = $res->fetch_all(MYSQLI_ASSOC); }
     <?php endif; ?>
 
     <div class="admin-layout">
-      <aside class="sidebar">
-        <h2 class="mb-3">Resumen</h2>
+      <aside class="admin-sidebar">
+        <h2 class="sidebar-title">📊 Resumen</h2>
         <?php
           $total = max(1, (int)$stats['total_items']);
           $pctExpire = min(100, round(($stats['expiring_30'] / $total) * 100));
           $pctLow = min(100, round(($stats['low_or_zero'] / $total) * 100));
         ?>
-        <div class="cards">
-          <div class="card stat-card">
-            <div class="stat-label">Ítems</div>
-            <div class="stat-value"><?= (int)$stats['total_items'] ?></div>
+        <div class="admin-stats">
+          <div class="admin-stat-card">
+            <div class="stat-icon">📊</div>
+            <div class="stat-info">
+              <div class="stat-value"><?= (int)$stats['total_items'] ?></div>
+              <div class="stat-label">Ítems</div>
+            </div>
           </div>
-          <div class="card stat-card">
-            <div class="stat-label">Unidades</div>
-            <div class="stat-value"><?= (int)$stats['total_units'] ?></div>
+          <div class="admin-stat-card">
+            <div class="stat-icon">📦</div>
+            <div class="stat-info">
+              <div class="stat-value"><?= (int)$stats['total_units'] ?></div>
+              <div class="stat-label">Unidades</div>
+            </div>
           </div>
-          <div class="card stat-card">
-            <div class="stat-label d-flex justify-content-between align-items-center">
-              <span>Por vencer (30d)</span>
-              <span class="badge bg-warning text-dark"><?= (int)$stats['expiring_30'] ?></span>
+          <div class="admin-stat-card warning">
+            <div class="stat-icon">⚠️</div>
+            <div class="stat-info">
+              <div class="stat-value"><?= (int)$stats['expiring_30'] ?></div>
+              <div class="stat-label">Por vencer (30d)</div>
+              <div class="stat-progress">
+                <div class="progress-bar" style="width: <?= $pctExpire ?>%"></div>
+              </div>
             </div>
-            <div class="progress mt-2" role="progressbar" aria-label="Por vencer" aria-valuenow="<?= $pctExpire ?>" aria-valuemin="0" aria-valuemax="100">
-              <div class="progress-bar bg-warning" style="width: <?= $pctExpire ?>%"></div>
-            </div>
-            <span class="progress-chip warning"><?= $pctExpire ?>% de ítems</span>
           </div>
-          <div class="card stat-card">
-            <div class="stat-label d-flex justify-content-between align-items-center">
-              <span>Bajo/0 stock</span>
-              <span class="badge bg-danger"><?= (int)$stats['low_or_zero'] ?></span>
+          <div class="admin-stat-card danger">
+            <div class="stat-icon">🚫</div>
+            <div class="stat-info">
+              <div class="stat-value"><?= (int)$stats['low_or_zero'] ?></div>
+              <div class="stat-label">Bajo/Sin stock</div>
+              <div class="stat-progress">
+                <div class="progress-bar" style="width: <?= $pctLow ?>%"></div>
+              </div>
             </div>
-            <div class="progress mt-2" role="progressbar" aria-label="Bajo stock" aria-valuenow="<?= $pctLow ?>" aria-valuemin="0" aria-valuemax="100">
-              <div class="progress-bar bg-danger" style="width: <?= $pctLow ?>%"></div>
-            </div>
-            <span class="progress-chip danger"><?= $pctLow ?>% de ítems</span>
           </div>
         </div>
-        <button id="adminMicBtn" class="btn micro-admin">🎤 Admin</button>
-        <div id="adminVoiceOut" class="card" style="margin-top:10px;"></div>
+        <button id="adminMicBtn" class="btn-admin-mic">🎤 Asistente Omarcitoia</button>
+        <div id="adminVoiceOut" class="admin-voice-out"></div>
       </aside>
 
-      <section class="content">
-        <h2>Medicamentos</h2>
-        <table class="table table-striped table-dark align-middle">
+      <section class="admin-content">
+        <h2 class="content-title">💊 Inventario de Medicamentos</h2>
+        <table class="admin-table">
           <thead>
             <tr>
               <th>ID</th><th>Nombre</th><th>Descripción</th><th>Precio</th><th>Stock</th><th>Vence</th><th>Acciones</th>
