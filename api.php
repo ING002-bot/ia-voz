@@ -17,7 +17,12 @@ function is_thanks(string $q): bool {
 
 function thanks_response(): string {
     $opts = [
-        '¡Con gusto! 😊','¡Para eso estoy! 🙌','¡Me alegra ayudarte! ✨','¡Cuando quieras! 😄'
+        '¡Con gusto! 😊 Estoy aquí siempre que me necesites.',
+        '¡Para eso estoy! 🙌 Es un placer ayudarte.',
+        '¡Me alegra mucho ayudarte! ✨ No dudes en consultarme cuando quieras.',
+        '¡Cuando quieras! 😄 Siempre es un gusto atenderte.',
+        '¡De nada! 🌟 Recuerda que estoy aquí para lo que necesites.',
+        '¡Encantado de ayudarte! 💙 Vuelve cuando quieras.'
     ];
     return $opts[array_rand($opts)];
 }
@@ -28,9 +33,38 @@ function is_bye(string $q): bool {
 
 function bye_response(): string {
     $opts = [
-        '¡Hasta luego! 👋 Que tengas un gran día.','¡Nos vemos pronto! 🌟','¡Cuídate! 🫶'
+        '¡Hasta luego! 👋 Que tengas un gran día. Cuídate mucho.',
+        '¡Nos vemos pronto! 🌟 Fue un placer ayudarte.',
+        '¡Cuídate mucho! 🫶 Vuelve cuando necesites, estaré aquí.',
+        '¡Adiós! 😊 Que estés muy bien. Nos vemos pronto.',
+        '¡Hasta la próxima! 👋 Recuerda que siempre estaré aquí para ayudarte.',
+        '¡Que te vaya súper! 🌈 Vuelve pronto a visitarme.'
     ];
     return $opts[array_rand($opts)];
+}
+
+// ============================================
+// COMANDOS DE VOZ PARA CARRITO Y COMPRAS
+// ============================================
+
+function is_cart_command(string $q): bool {
+    return preg_match('/\b(carrito|mi carrito|ver carrito|abrir carrito|mostrar carrito|muestra el carrito)\b/iu', $q) === 1;
+}
+
+function is_checkout_command(string $q): bool {
+    return preg_match('/\b(pagar|proceder al pago|finalizar compra|comprar|realizar pago|hacer pago|quiero pagar)\b/iu', $q) === 1;
+}
+
+function is_historial_command(string $q): bool {
+    return preg_match('/\b(historial|mis compras|compras anteriores|compras previas|ver compras|mostrar compras|muestra mi historial)\b/iu', $q) === 1;
+}
+
+function is_download_pdf_command(string $q): bool {
+    return preg_match('/\b(descargar pdf|descarga pdf|pdf|boleta|mi boleta|ultima boleta|última boleta|comprobante|descargar boleta|descargar comprobante)\b/iu', $q) === 1;
+}
+
+function is_clear_cart_command(string $q): bool {
+    return preg_match('/\b(vaciar carrito|limpiar carrito|borrar carrito|eliminar todo del carrito)\b/iu', $q) === 1;
 }
 
 function is_greeting(string $q): bool {
@@ -39,7 +73,12 @@ function is_greeting(string $q): bool {
 
 function greeting_response(): string {
     $opts = [
-        '¡Hola! 😊 ¿En qué puedo ayudarte hoy?','¡Qué gusto escucharte! 🙌 Dime, ¿qué necesitas?','¡Hola, bienvenido a la farmacia! 🏪 Estoy listo para ayudarte.','¡Hey! 😄 Puedo responder sobre precios, stock y más.','¡Hola! 🌟 Pregúntame por disponibilidad o precio de un medicamento.'
+        '¡Hola! 😊 Soy Omarcitoia, tu asistente virtual. ¿En qué puedo ayudarte hoy?',
+        '¡Qué gusto escucharte! 🙌 Soy Omarcitoia y estoy aquí para ayudarte. Dime, ¿qué necesitas?',
+        '¡Hola! Bienvenido a nuestra farmacia 🏪 Me llamo Omarcitoia y estoy listo para asistirte.',
+        '¡Hey! 😄 Soy Omarcitoia, tu compañero de salud. Puedo ayudarte con información sobre medicamentos, precios y más.',
+        '¡Hola! 🌟 Soy Omarcitoia. Pregúntame por cualquier medicamento, con gusto te ayudaré.',
+        '¡Qué alegría verte por aquí! 😊 Soy Omarcitoia y estoy para servirte. ¿Qué necesitas saber?'
     ];
     return $opts[array_rand($opts)];
 }
@@ -178,19 +217,31 @@ function answer_from_db(mysqli $db, string $q): string {
         $nombre = $med['nombre'];
         $precio = number_format((float)$med['precio'], 2);
         $stock = (int)$med['stock'];
-        $disp = $stock > 0 ? 'Sí, tenemos' : 'No tenemos disponible por ahora';
-        if ($priceIntent && $availabilityIntent) {
-            return "$disp $nombre. Su precio es S/ $precio.";
-        } elseif ($priceIntent) {
-            return "El $nombre cuesta S/ $precio.";
+        $desc = trim((string)$med['descripcion']);
+        
+        // Respuestas conversacionales sin mencionar stock
+        $responses = [
+            "¡Claro! Tengo información sobre $nombre. 😊 Su precio es de S/ $precio.",
+            "¡Por supuesto! El $nombre tiene un costo de S/ $precio.",
+            "¡Perfecto! Te cuento sobre $nombre: su precio es S/ $precio."
+        ];
+        
+        $base = $responses[array_rand($responses)];
+        
+        if ($desc !== '') {
+            $base .= " Déjame contarte más: $desc";
+        }
+        
+        if ($priceIntent) {
+            return $base . " ¿Hay algo más en lo que pueda ayudarte? 😊";
         } elseif ($availabilityIntent) {
-            return $stock > 0
-                ? "Sí, tenemos $nombre. Quedan $stock en stock."
-                : "No, actualmente no tenemos $nombre en stock.";
+            if ($stock > 0) {
+                return "¡Sí, claro! Contamos con $nombre disponible. 😊 El precio es S/ $precio. ¿Te gustaría saber algo más sobre este medicamento?";
+            } else {
+                return "Lo siento, en este momento $nombre no está disponible. 😔 Pero puedo recomendarte alternativas similares o puedes consultarlo más adelante. ¿Necesitas que te sugiera algo parecido?";
+            }
         } else {
-            $desc = trim((string)$med['descripcion']);
-            $base = $stock > 0 ? "Tenemos $nombre en S/ $precio." : "$nombre está agotado actualmente.";
-            return $desc !== '' ? "$base Descripción: $desc" : $base;
+            return $base . " ¿Quieres saber algo más sobre este medicamento o te puedo ayudar con otro? 😊";
         }
     }
 
@@ -198,21 +249,21 @@ function answer_from_db(mysqli $db, string $q): string {
     if (!empty($bySym)) {
         $parts = [];
         foreach ($bySym as $r) {
-            $parts[] = $r['nombre'] . ' (S/ ' . number_format((float)$r['precio'], 2) . ', stock ' . (int)$r['stock'] . ')';
+            $parts[] = $r['nombre'] . ' (S/ ' . number_format((float)$r['precio'], 2) . ')';
         }
-        return 'Algunas opciones son: ' . implode('; ', $parts) . '.';
+        return '¡Mira! 👀 Te puedo recomendar estas opciones: ' . implode(', ', $parts) . '. ¿Te gustaría saber más detalles sobre alguno de estos? 😊';
     }
 
-    $res = $db->query('SELECT nombre, precio, stock FROM medicamentos ORDER BY nombre ASC LIMIT 5');
+    $res = $db->query('SELECT nombre, precio FROM medicamentos ORDER BY nombre ASC LIMIT 5');
     if ($res && $res->num_rows) {
         $parts = [];
         while ($row = $res->fetch_assoc()) {
-            $parts[] = $row['nombre'] . ' (S/ ' . number_format((float)$row['precio'], 2) . ', stock ' . (int)$row['stock'] . ')';
+            $parts[] = $row['nombre'] . ' (S/ ' . number_format((float)$row['precio'], 2) . ')';
         }
-        return 'No entendí el producto exacto. Disponibles: ' . implode('; ', $parts) . '.';
+        return 'Mmm... 🤔 No estoy seguro de qué producto buscas, pero aquí te muestro algunos disponibles: ' . implode(', ', $parts) . '. ¿Alguno de estos te interesa?';
     }
 
-    return 'No encontré información en la base de datos.';
+    return 'Lo siento, no encontré información sobre eso. 😅 ¿Podrías reformular tu pregunta o preguntarme por otro medicamento?';
 }
 
 // Main
@@ -252,6 +303,55 @@ try {
         echo json_encode(['text' => $ans]);
         exit;
     }
+    
+    // ============================================
+    // COMANDOS DE CARRITO Y COMPRAS
+    // ============================================
+    
+    // Abrir carrito
+    if (is_cart_command($q)) {
+        $ans = '¡Perfecto! 🛍️ Te muestro tu carrito de compras. Puedes ver los productos que has agregado.';
+        $stmt = $db->prepare('INSERT INTO consultas_historial (user_type, question, answer) VALUES ("client", ?, ?)');
+        if ($stmt) { $stmt->bind_param('ss', $q, $ans); $stmt->execute(); $stmt->close(); }
+        echo json_encode(['text' => $ans, 'action' => 'open_cart']);
+        exit;
+    }
+    
+    // Proceder al pago
+    if (is_checkout_command($q)) {
+        $ans = '¡Entendido! 💳 Te ayudo a proceder con el pago. Voy a abrir el carrito para que puedas finalizar tu compra.';
+        $stmt = $db->prepare('INSERT INTO consultas_historial (user_type, question, answer) VALUES ("client", ?, ?)');
+        if ($stmt) { $stmt->bind_param('ss', $q, $ans); $stmt->execute(); $stmt->close(); }
+        echo json_encode(['text' => $ans, 'action' => 'checkout']);
+        exit;
+    }
+    
+    // Ver historial de compras
+    if (is_historial_command($q)) {
+        $ans = '📋 ¡Claro! Te muestro tu historial de compras. Aquí podrás ver todas tus compras anteriores.';
+        $stmt = $db->prepare('INSERT INTO consultas_historial (user_type, question, answer) VALUES ("client", ?, ?)');
+        if ($stmt) { $stmt->bind_param('ss', $q, $ans); $stmt->execute(); $stmt->close(); }
+        echo json_encode(['text' => $ans, 'action' => 'show_historial']);
+        exit;
+    }
+    
+    // Descargar PDF
+    if (is_download_pdf_command($q)) {
+        $ans = '📄 ¡Por supuesto! Voy a descargar tu última boleta en PDF. Un momento...';
+        $stmt = $db->prepare('INSERT INTO consultas_historial (user_type, question, answer) VALUES ("client", ?, ?)');
+        if ($stmt) { $stmt->bind_param('ss', $q, $ans); $stmt->execute(); $stmt->close(); }
+        echo json_encode(['text' => $ans, 'action' => 'download_pdf']);
+        exit;
+    }
+    
+    // Vaciar carrito
+    if (is_clear_cart_command($q)) {
+        $ans = '🗑️ Entendido. Voy a vaciar tu carrito de compras.';
+        $stmt = $db->prepare('INSERT INTO consultas_historial (user_type, question, answer) VALUES ("client", ?, ?)');
+        if ($stmt) { $stmt->bind_param('ss', $q, $ans); $stmt->execute(); $stmt->close(); }
+        echo json_encode(['text' => $ans, 'action' => 'clear_cart']);
+        exit;
+    }
 
     if (is_time_question($q)) {
         $ans = format_time_response();
@@ -269,13 +369,18 @@ try {
         exit;
     }
 
-    // Total stock intent
+    // Total stock intent - respuesta sin mostrar cantidades específicas
     $intents = detect_intents($q);
     if (!empty($intents['stock'])) {
-        $res = $db->query('SELECT COUNT(*) AS productos, COALESCE(SUM(stock),0) AS unidades FROM medicamentos WHERE stock > 0');
-        $productos = 0; $unidades = 0;
-        if ($res && ($r = $res->fetch_assoc())) { $productos = (int)$r['productos']; $unidades = (int)$r['unidades']; }
-        $ans = "Tenemos $productos productos en stock con $unidades unidades disponibles.";
+        $res = $db->query('SELECT COUNT(*) AS productos FROM medicamentos WHERE stock > 0');
+        $productos = 0;
+        if ($res && ($r = $res->fetch_assoc())) { $productos = (int)$r['productos']; }
+        $responses = [
+            "¡Claro! Contamos con $productos tipos de medicamentos diferentes disponibles. 😊 ¿Te gustaría saber sobre alguno en particular?",
+            "¡Por supuesto! Tenemos $productos productos distintos que puedo mostrarte. ¿Hay alguno que te interese específicamente?",
+            "¡Sí! Manejamos $productos medicamentos diferentes. 💊 ¿Quieres que te ayude a encontrar algo específico?"
+        ];
+        $ans = $responses[array_rand($responses)];
         $stmt = $db->prepare('INSERT INTO consultas_historial (user_type, question, answer) VALUES ("client", ?, ?)');
         if ($stmt) { $stmt->bind_param('ss', $q, $ans); $stmt->execute(); $stmt->close(); }
         echo json_encode(['text' => $ans]);
@@ -289,9 +394,27 @@ try {
             $n = (string)($med['nombre'] ?? '');
             $p = number_format((float)($med['precio'] ?? 0), 2);
             $s = (int)($med['stock'] ?? 0);
-            $ans = $s > 0
-                ? "Sí, tenemos $n. Precio S/ $p. Stock disponible: $s."
-                : "$n no tiene stock en este momento. Precio S/ $p.";
+            $d = trim((string)($med['descripcion'] ?? ''));
+            
+            $responses = [
+                "¡Claro! Te cuento sobre $n: 😊 Tiene un precio de S/ $p.",
+                "¡Perfecto! El $n cuesta S/ $p.",
+                "¡Sí! Tengo información sobre $n. Su precio es S/ $p."
+            ];
+            $ans = $responses[array_rand($responses)];
+            
+            if ($s > 0) {
+                $ans .= " Lo tenemos disponible. 😊";
+            } else {
+                $ans .= " Actualmente no está disponible, pero puedo ayudarte a encontrar alternativas. 💊";
+            }
+            
+            if ($d !== '') {
+                $ans .= " Para que sepas: $d";
+            }
+            
+            $ans .= " ¿Hay algo más que quieras saber?";
+            
             $stmt = $db->prepare('INSERT INTO consultas_historial (user_type, question, answer) VALUES ("client", ?, ?)');
             if ($stmt) { $stmt->bind_param('ss', $q, $ans); $stmt->execute(); $stmt->close(); }
             echo json_encode(['text' => $ans]);
@@ -301,7 +424,13 @@ try {
 
     $answer = answer_from_db($db, $q);
     if (trim($answer) === '' || $answer === 'No encontré información para esa consulta.') {
-        $answer = 'Mmm... 🤔 no estoy seguro de eso. Puedo ayudarte con disponibilidad, precios o buscar por síntoma. Por ejemplo: "¿Tienen paracetamol?" o "¿Cuánto cuesta el ibuprofeno?"';
+        $fallbacks = [
+            'Mmm... 🤔 No estoy seguro de entender eso. Puedo ayudarte con información sobre medicamentos, precios y más. Por ejemplo, puedes preguntarme: "¿Tienen paracetamol?" o "¿Cuánto cuesta el ibuprofeno?"',
+            'Disculpa, no comprendí bien tu pregunta. 😅 Pero puedo ayudarte con información de medicamentos. ¿Me puedes decir de qué medicamento quieres saber?',
+            'Lo siento, no capté eso. 🤔 Estoy aquí para ayudarte con precios y disponibilidad de medicamentos. ¿Qué medicamento te interesa?',
+            'Hmm, no estoy seguro de eso. 😊 Pero cuéntame, ¿qué medicamento estás buscando? Puedo darte información sobre precios y detalles.'
+        ];
+        $answer = $fallbacks[array_rand($fallbacks)];
     }
     $stmt = $db->prepare('INSERT INTO consultas_historial (user_type, question, answer) VALUES ("client", ?, ?)');
     if ($stmt) { $stmt->bind_param('ss', $q, $answer); $stmt->execute(); $stmt->close(); }

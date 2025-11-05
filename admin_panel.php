@@ -119,7 +119,7 @@ if ($res) { $rows = $res->fetch_all(MYSQLI_ASSOC); }
         <small>Hola, <strong><?= htmlspecialchars($_SESSION['admin_username'] ?? 'admin', ENT_QUOTES, 'UTF-8') ?></strong></small>
       </div>
       <div class="topbar-actions">
-        <a class="btn btn-outline" href="index.html">Inicio</a>
+        <a class="btn btn-outline" href="index.php">Inicio</a>
         <a class="btn btn-danger" href="logout.php">Salir</a>
       </div>
     </div>
@@ -172,8 +172,22 @@ if ($res) { $rows = $res->fetch_all(MYSQLI_ASSOC); }
             </div>
           </div>
         </div>
-        <button id="adminMicBtn" class="btn-admin-mic">🎤 Asistente Omarcitoia</button>
-        <div id="adminVoiceOut" class="admin-voice-out"></div>
+        
+        <!-- Chat con Omarcitoia (Voz y Texto) -->
+        <div class="admin-chat-section">
+          <h3 class="chat-section-title">💬 Chat Omarcitoia</h3>
+          <div id="adminChatMessages" class="admin-chat-messages">
+            <div class="admin-chat-bubble bot">
+              <div class="bubble-avatar">🤖</div>
+              <div class="bubble-text">¡Hola! Soy Omarcitoia, tu asistente administrativo. ¿Qué necesitas revisar?</div>
+            </div>
+          </div>
+          <div class="admin-chat-input-wrapper">
+            <input type="text" id="adminChatInput" class="admin-chat-input" placeholder="Escribe tu consulta o usa el micrófono..." />
+            <button id="adminMicBtn" class="btn-admin-mic" title="Activar reconocimiento de voz">🎤</button>
+            <button id="adminSendBtn" class="btn-admin-send" title="Enviar mensaje">Enviar</button>
+          </div>
+        </div>
       </aside>
 
       <section class="admin-content">

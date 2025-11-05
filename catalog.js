@@ -236,6 +236,11 @@
       
       if (data && data.text) {
         setAnswer(data.text);
+        
+        // Ejecutar acciones si hay comando
+        if (data.action) {
+          executeAction(data.action);
+        }
       } else {
         setAnswer('Mmm... 🤔 no estoy seguro. Puedo ayudarte con disponibilidad y precios. Por ejemplo: "¿Tienen paracetamol?"');
       }
@@ -244,6 +249,404 @@
       setAnswer('Lo siento, hubo un error al procesar tu pregunta. Intenta de nuevo.');
     }
   }
+  
+  // ============================================
+  // EJECUCIÓN DE ACCIONES POR VOZ
+  // ============================================
+  
+  function executeAction(action) {
+    console.log('🎬 Ejecutando acción:', action);
+    
+    switch(action) {
+      case 'open_cart':
+        if (window.cartSystem && typeof window.cartSystem.openSidebar === 'function') {
+          setTimeout(() => {
+            window.cartSystem.openSidebar();
+          }, 500);
+        }
+        break;
+        
+      case 'checkout':
+        if (window.cartSystem && typeof window.cartSystem.openSidebar === 'function') {
+          setTimeout(() => {
+            window.cartSystem.openSidebar();
+            // Hacer scroll al botón de checkout
+            setTimeout(() => {
+              const checkoutBtn = document.getElementById('checkoutBtn');
+              if (checkoutBtn) {
+                checkoutBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                checkoutBtn.classList.add('pulse-animation');
+                setTimeout(() => {
+                  checkoutBtn.classList.remove('pulse-animation');
+                }, 2000);
+              }
+            }, 300);
+          }, 500);
+        }
+        break;
+        
+      case 'show_historial':
+        showHistorialModal();
+        break;
+        
+      case 'download_pdf':
+        downloadUltimaBoleta();
+        break;
+        
+      case 'clear_cart':
+        if (window.cartSystem && typeof window.cartSystem.clearCart === 'function') {
+          window.cartSystem.clearCart();
+        } else {
+          // Limpiar manualmente si la función no existe
+          localStorage.removeItem('omarcitoia_cart');
+          location.reload();
+        }
+        break;
+        
+      default:
+        console.warn('Acción no reconocida:', action);
+    }
+  }
+  
+  // ============================================
+  // HISTORIAL DE COMPRAS
+  // ============================================
+  
+  async function showHistorialModal() {
+    try {
+      const response = await fetch('historial_api.php?action=get_compras');
+      const data = await response.json();
+      
+      if (data.success && data.compras) {
+        const compras = data.compras;
+        
+        let html = `
+          <div class="modal-overlay" id="historialModal" onclick="closeHistorialModal()">
+            <div class="modal-content" onclick="event.stopPropagation()">
+              <div class="modal-header">
+                <h3>📋 Mi Historial de Compras</h3>
+                <button onclick="closeHistorialModal()" class="btn-close-modal">✕</button>
+              </div>
+              <div class="modal-body">
+        `;
+        
+        if (compras.length === 0) {
+          html += '<p class="empty-message">No tienes compras registradas aún.</p>';
+        } else {
+          html += '<div class="compras-list">';
+          compras.forEach(compra => {
+            const fecha = new Date(compra.fecha).toLocaleDateString('es-PE', {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit'
+            });
+            html += `
+              <div class="compra-item">
+                <div class="compra-info">
+                  <h4>${compra.medicamento}</h4>
+                  <p class="compra-fecha">${fecha}</p>
+                </div>
+                <div class="compra-details">
+                  <span class="cantidad">Cantidad: ${compra.cantidad}</span>
+                  <span class="precio">S/ ${parseFloat(compra.precio_unitario).toFixed(2)} c/u</span>
+                  <span class="subtotal">Total: S/ ${parseFloat(compra.subtotal).toFixed(2)}</span>
+                </div>
+              </div>
+            `;
+          });
+          html += '</div>';
+        }
+        
+        html += `
+              </div>
+              <div class="modal-footer">
+                <button onclick="showBoletasModal()" class="btn-secondary">Ver Boletas</button>
+                <button onclick="closeHistorialModal()" class="btn-primary">Cerrar</button>
+              </div>
+            </div>
+          </div>
+        `;
+        
+        document.body.insertAdjacentHTML('beforeend', html);
+        
+      } else {
+        if (data.error === 'No autorizado. Debes iniciar sesión.') {
+          alert('Debes iniciar sesión para ver tu historial de compras.');
+          window.location.href = 'login_unified.php';
+        } else {
+          alert('No se pudo cargar el historial de compras.');
+        }
+      }
+    } catch (error) {
+      console.error('Error al cargar historial:', error);
+      alert('Error al cargar el historial de compras.');
+    }
+  }
+  
+  // ============================================
+  // BOLETAS
+  // ============================================
+  
+  async function showBoletasModal() {
+    closeHistorialModal();
+    
+    try {
+      const response = await fetch('historial_api.php?action=get_boletas');
+      const data = await response.json();
+      
+      if (data.success && data.boletas) {
+        const boletas = data.boletas;
+        
+        let html = `
+          <div class="modal-overlay" id="boletasModal" onclick="closeBoletasModal()">
+            <div class="modal-content" onclick="event.stopPropagation()">
+              <div class="modal-header">
+                <h3>📄 Mis Boletas</h3>
+                <button onclick="closeBoletasModal()" class="btn-close-modal">✕</button>
+              </div>
+              <div class="modal-body">
+        `;
+        
+        if (boletas.length === 0) {
+          html += '<p class="empty-message">No tienes boletas registradas aún.</p>';
+        } else {
+          html += '<div class="boletas-list">';
+          boletas.forEach(boleta => {
+            const fecha = new Date(boleta.fecha).toLocaleDateString('es-PE', {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit'
+            });
+            html += `
+              <div class="boleta-item">
+                <div class="boleta-info">
+                  <h4>Boleta N° ${boleta.numero_boleta}</h4>
+                  <p class="boleta-fecha">${fecha}</p>
+                </div>
+                <div class="boleta-details">
+                  <span class="total">Total: S/ ${parseFloat(boleta.total).toFixed(2)}</span>
+                  <button onclick="downloadBoletaPDF(${boleta.id})" class="btn-download">
+                    📥 Descargar PDF
+                  </button>
+                </div>
+              </div>
+            `;
+          });
+          html += '</div>';
+        }
+        
+        html += `
+              </div>
+              <div class="modal-footer">
+                <button onclick="closeBoletasModal()" class="btn-primary">Cerrar</button>
+              </div>
+            </div>
+          </div>
+        `;
+        
+        document.body.insertAdjacentHTML('beforeend', html);
+        
+      } else {
+        alert('No se pudo cargar las boletas.');
+      }
+    } catch (error) {
+      console.error('Error al cargar boletas:', error);
+      alert('Error al cargar las boletas.');
+    }
+  }
+  
+  // ============================================
+  // DESCARGA DE PDFs
+  // ============================================
+  
+  async function downloadUltimaBoleta() {
+    try {
+      const response = await fetch('historial_api.php?action=get_ultima_boleta');
+      const data = await response.json();
+      
+      if (data.success && data.boleta) {
+        generateBoletaPDF(data.boleta);
+      } else {
+        if (data.error === 'No autorizado. Debes iniciar sesión.') {
+          alert('Debes iniciar sesión para descargar boletas.');
+          window.location.href = 'login_unified.php';
+        } else {
+          alert('No tienes boletas para descargar. Realiza una compra primero.');
+        }
+      }
+    } catch (error) {
+      console.error('Error al descargar boleta:', error);
+      alert('Error al descargar la boleta.');
+    }
+  }
+  
+  async function downloadBoletaPDF(boletaId) {
+    try {
+      const response = await fetch(`historial_api.php?action=get_boleta&id=${boletaId}`);
+      const data = await response.json();
+      
+      if (data.success && data.boleta) {
+        generateBoletaPDF(data.boleta);
+      } else {
+        alert('No se pudo cargar la boleta.');
+      }
+    } catch (error) {
+      console.error('Error al descargar boleta:', error);
+      alert('Error al descargar la boleta.');
+    }
+  }
+  
+  function generateBoletaPDF(boleta) {
+    if (typeof window.jspdf === 'undefined') {
+      alert('Error: jsPDF no está cargado. Por favor recarga la página.');
+      return;
+    }
+    
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    
+    // Obtener info del usuario desde la sesión (si está disponible)
+    const userInfo = {
+      nombre: 'Cliente',
+      username: 'usuario'
+    };
+    
+    // Colores
+    const azul = [30, 136, 229];
+    const naranja = [251, 140, 0];
+    
+    // Encabezado
+    doc.setFillColor(...azul);
+    doc.rect(0, 0, 210, 45, 'F');
+    
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(28);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Farmacia Omarcitoia', 105, 20, { align: 'center' });
+    
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Tu salud, nuestra prioridad', 105, 30, { align: 'center' });
+    doc.text('RUC: 20123456789 - Telf: (01) 234-5678', 105, 37, { align: 'center' });
+    
+    // Título
+    doc.setTextColor(0, 0, 0);
+    doc.setFontSize(18);
+    doc.setFont('helvetica', 'bold');
+    doc.text('BOLETA DE VENTA ELECTRÓNICA', 105, 58, { align: 'center' });
+    
+    // Información
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`N° Boleta: ${boleta.numero_boleta}`, 20, 70);
+    doc.text(`Fecha: ${new Date(boleta.fecha).toLocaleDateString('es-PE', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    })}`, 20, 77);
+    doc.text(`Cliente: ${userInfo.nombre}`, 20, 84);
+    doc.text(`Usuario: @${userInfo.username}`, 20, 91);
+    
+    // Línea separadora
+    doc.setDrawColor(...naranja);
+    doc.setLineWidth(0.8);
+    doc.line(20, 98, 190, 98);
+    
+    // Tabla de productos
+    let y = 108;
+    doc.setFillColor(240, 240, 240);
+    doc.rect(20, y - 5, 170, 8, 'F');
+    
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.text('Producto', 22, y);
+    doc.text('Cant.', 130, y);
+    doc.text('P. Unit.', 150, y);
+    doc.text('Subtotal', 175, y);
+    
+    y += 10;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    
+    const productos = JSON.parse(boleta.detalles);
+    productos.forEach((item, index) => {
+      if (index % 2 === 0) {
+        doc.setFillColor(250, 250, 250);
+        doc.rect(20, y - 4, 170, 7, 'F');
+      }
+      
+      doc.text(item.nombre.substring(0, 40), 22, y);
+      doc.text(item.cantidad.toString(), 133, y);
+      doc.text(`S/ ${item.precio.toFixed(2)}`, 150, y);
+      doc.text(`S/ ${item.subtotal.toFixed(2)}`, 175, y);
+      y += 7;
+    });
+    
+    // Total
+    y += 10;
+    doc.setDrawColor(...azul);
+    doc.setLineWidth(0.5);
+    doc.line(20, y, 190, y);
+    
+    y += 10;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(14);
+    doc.text('TOTAL:', 150, y);
+    doc.setTextColor(...naranja);
+    doc.setFontSize(16);
+    doc.text(`S/ ${parseFloat(boleta.total).toFixed(2)}`, 175, y);
+    
+    // Footer
+    doc.setTextColor(100, 100, 100);
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    y += 15;
+    doc.text('Información importante:', 20, y);
+    y += 5;
+    doc.setFontSize(8);
+    doc.text('• Conserve este documento como comprobante de su compra', 22, y);
+    y += 4;
+    doc.text('• Ganaste ' + Math.floor(parseFloat(boleta.total) / 10) + ' puntos con esta compra', 22, y);
+    y += 4;
+    doc.text('• Para consultas o reclamos comuníquese al (01) 234-5678', 22, y);
+    
+    y += 15;
+    doc.setFillColor(...azul);
+    doc.rect(0, y, 210, 30, 'F');
+    
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Gracias por su compra en Farmacia Omarcitoia', 105, y + 10, { align: 'center' });
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.text('www.farmaciaomarcitoia.com | info@omarcitoia.com', 105, y + 17, { align: 'center' });
+    
+    // Descargar
+    doc.save(`Boleta_${boleta.numero_boleta}.pdf`);
+    
+    console.log('📄 PDF generado:', boleta.numero_boleta);
+  }
+  
+  // Funciones globales para los modales
+  window.closeHistorialModal = function() {
+    const modal = document.getElementById('historialModal');
+    if (modal) modal.remove();
+  };
+  
+  window.closeBoletasModal = function() {
+    const modal = document.getElementById('boletasModal');
+    if (modal) modal.remove();
+  };
+  
+  window.showBoletasModal = showBoletasModal;
+  window.downloadBoletaPDF = downloadBoletaPDF;
   
   // ============================================
   // INICIALIZACIÓN

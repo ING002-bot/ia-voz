@@ -1,8 +1,11 @@
-// Admin Voice Assistant (Web Speech API)
+// Admin Chat Assistant (Voice & Text)
 (function () {
-  const btn = document.getElementById('adminMicBtn');
-  const out = document.getElementById('adminVoiceOut');
-  if (!btn || !out) return;
+  const micBtn = document.getElementById('adminMicBtn');
+  const sendBtn = document.getElementById('adminSendBtn');
+  const chatInput = document.getElementById('adminChatInput');
+  const chatMessages = document.getElementById('adminChatMessages');
+  
+  if (!micBtn || !sendBtn || !chatInput || !chatMessages) return;
 
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   const synth = window.speechSynthesis;
@@ -13,6 +16,8 @@
     if (!synth) return;
     const u = new SpeechSynthesisUtterance(text);
     u.lang = 'es-ES';
+    u.rate = 0.95;
+    u.pitch = 1.0;
     const voices = synth.getVoices();
     const esVoice = voices.find(v => /es-/i.test(v.lang));
     if (esVoice) u.voice = esVoice;
@@ -20,11 +25,31 @@
     synth.speak(u);
   }
 
-  function setOut(text) {
-    out.textContent = text;
+  function addChatBubble(text, isBot) {
+    const bubble = document.createElement('div');
+    bubble.className = `admin-chat-bubble ${isBot ? 'bot' : 'user'}`;
+    
+    const avatar = document.createElement('div');
+    avatar.className = 'bubble-avatar';
+    avatar.textContent = isBot ? '🤖' : '👤';
+    
+    const textDiv = document.createElement('div');
+    textDiv.className = 'bubble-text';
+    textDiv.textContent = text;
+    
+    bubble.appendChild(avatar);
+    bubble.appendChild(textDiv);
+    chatMessages.appendChild(bubble);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
   }
 
   async function sendAdminQuestion(question) {
+    if (!question.trim()) return;
+    
+    // Agregar mensaje del usuario
+    addChatBubble(question, false);
+    chatInput.value = '';
+    
     try {
       const res = await fetch('admin_consulta.php', {
         method: 'POST',
@@ -33,31 +58,58 @@
       });
       const data = await res.json();
       const answer = data && data.text ? data.text : (data.error || 'Sin respuesta');
-      setOut(answer);
+      
+      // Agregar respuesta del bot
+      addChatBubble(answer, true);
       speak(answer);
     } catch (e) {
-      setOut('Error al consultar.');
+      addChatBubble('Error al conectar con el asistente.', true);
     }
   }
 
+  // Enviar mensaje por texto
+  sendBtn.addEventListener('click', () => {
+    sendAdminQuestion(chatInput.value);
+  });
+
+  // Enter para enviar
+  chatInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+      sendAdminQuestion(chatInput.value);
+    }
+  });
+
   function init() {
     if (!SpeechRecognition || !synth) {
-      setOut('Tu navegador no soporta voz.');
+      console.warn('Tu navegador no soporta reconocimiento de voz completo.');
+      micBtn.disabled = true;
       return;
     }
     recognition = new SpeechRecognition();
     recognition.lang = 'es-ES';
     recognition.interimResults = false;
-    recognition.onstart = () => { recognizing = true; btn.textContent = '⏹️ Admin'; };
-    recognition.onerror = () => { recognizing = false; btn.textContent = '🎤 Admin'; };
-    recognition.onend = () => { recognizing = false; btn.textContent = '🎤 Admin'; };
+    recognition.onstart = () => { 
+      recognizing = true; 
+      micBtn.style.background = '#ef4444';
+      micBtn.textContent = '⏹️';
+    };
+    recognition.onerror = () => { 
+      recognizing = false; 
+      micBtn.style.background = '';
+      micBtn.textContent = '🎤';
+    };
+    recognition.onend = () => { 
+      recognizing = false; 
+      micBtn.style.background = '';
+      micBtn.textContent = '🎤';
+    };
     recognition.onresult = (e) => {
       const t = e.results[0][0].transcript;
-      setOut('Tú: ' + t);
+      chatInput.value = t;
       sendAdminQuestion(t);
     };
 
-    btn.addEventListener('click', () => {
+    micBtn.addEventListener('click', () => {
       if (!recognition) return;
       if (recognizing) recognition.stop(); else recognition.start();
     });
